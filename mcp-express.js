@@ -1,40 +1,13 @@
-
-import * as Sentry from "@sentry/node"
-
-Sentry.init({
-  dsn: "https://c0e0d4cfc3c07b592746f3206d02d508@o447951.ingest.us.sentry.io/4509521091297281",
-  spotlight: true,
-  tracesSampleRate: 1.0, // Capture 100% of the transactions
-  environment: process.env.NODE_ENV || 'development',
-  tracePropagationTargets: ['localhost', /^https:\/\/yourapi\.domain\.com\/api/],
-  integrations: [
-    Sentry.httpIntegration({
-      tracing: true,
-    }),
-    Sentry.nativeNodeFetchIntegration({
-      tracing: true,
-    }),
-  ],
-  sendDefaultPii: true,
-  beforeSend(event) {
-    console.log('📤 Sending event to Sentry:', event.type, event.transaction);
-    return event;
-  },
-  beforeSendTransaction(event) {
-    console.log('📈 Sending transaction to Sentry:', event.transaction);
-    return event;
-  },
-});
-
+import "./instrument.mjs";
+import * as Sentry from "@sentry/node";
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { z } from "zod";
-import { wrapMcpServerWithSentry } from "@sentry/node";
 
 // creates a fresh server instance per HTTP request (stateless)
 function createServer() {
-  const server = wrapMcpServerWithSentry(new McpServer(
+  const server = Sentry.wrapMcpServerWithSentry(new McpServer(
     {
       name: "add-server",
       version: "1.0.0"
@@ -47,21 +20,17 @@ function createServer() {
     }
   ));
 
-  server.registerTool(
+  server.tool(
     "add",
+    "Returns a + b",
     {
-      title: "add",
-      description: "Returns a + b",
-      // Zod shape *not* wrapped in z.object(); SDK handles conversion.
-      inputSchema: {
-        a: z.number(),
-        b: z.number()
-      }
+      a: z.number(),
+      b: z.number()
     },
     async ({ a, b }) => {
       // Make a weather API call (test call for children spans)
       await fetch('https://api.weatherapi.com/v1/current.json?key=YOUR_API_KEY&q=London');
-      
+      console.log("weather API call");
       return {
         content: [
           {
@@ -71,7 +40,8 @@ function createServer() {
           }
         ]
       };
-    })
+    }
+  );
 
   return server;
 }
@@ -119,7 +89,7 @@ app.delete("/mcp", reject);
 
 
 app.get("/sentry-error", async (req, res) => {
-  console.log("Hello Hono!");
+  console.log("Hello Express!");
   throw new Error("My first Sentry error!");
 });
 
