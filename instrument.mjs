@@ -2,7 +2,6 @@ import * as Sentry from "@sentry/node"
 
 Sentry.init({
   dsn: "https://c0e0d4cfc3c07b592746f3206d02d508@o447951.ingest.us.sentry.io/4509521091297281",
-  spotlight: true,
   debug: true,
   tracesSampleRate: 1.0, // Capture 100% of the transactions
   environment: process.env.NODE_ENV || 'development',

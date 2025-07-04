@@ -1,56 +1,93 @@
-# MCP Express Server
+# Express MCP Auto-Instrumentation Examples
 
-A Node.js Express server that implements the Model Context Protocol (MCP) with integrated Sentry monitoring and performance tracking.
+This repository contains three example implementations of MCP (Model Context Protocol) servers using Express.js, demonstrating different approaches to Sentry instrumentation and transport mechanisms.
 
-## Features
+## Overview
 
-- **MCP Integration**: Implements MCP server with tool capabilities
-- **Sentry Monitoring**: Full error tracking and performance monitoring
-- **RESTful API**: Express.js server with JSON API endpoints
-- **Tool System**: Built-in "add" tool for mathematical operations
-- **Stateless Design**: Fresh server instances per request
-- **ES Modules**: Modern JavaScript module system
+The project showcases how to integrate Sentry monitoring and performance tracking with MCP servers, providing examples with full instrumentation, partial instrumentation, and SSE transport.
 
-## Prerequisites
 
-- Node.js (version 14 or higher)
-- npm or yarn package manager
 
 ## Installation
 
-1. Clone the repository:
 ```bash
+# Clone the repository
 git clone <repository-url>
-cd express-mcp
+cd express-mcp-auto-instrumentation
+
+# Install dependencies
+yarn install
 ```
 
-2. Install dependencies:
+## The Three Servers
+
+### 1. Streamable HTTP Server with Full Instrumentation
+**File:** `mcp-express-streamable-http.mjs`  
+**Port:** 3005
+
+This is the most feature-rich implementation with complete Sentry instrumentation.
+
+**Features:**
+- Full Sentry error tracking and performance monitoring via `wrapMcpServerWithSentry`
+- Supports both POST (JSON-RPC) and GET (SSE) endpoints
+- Stateless design (fresh server instance per request)
+- Advanced tools:
+  - `add` - Basic math with progress notifications
+  - `add-dynamic-tool` - Create new tools on the fly
+  - `create-resource` - Create new resources dynamically
+  - `update-resource` - Update existing resources
+  - `log-message` - Send custom log messages
+  - `add-dynamic-prompt` - Create prompts dynamically
+- Resources and prompts support
+- Comprehensive logging system
+
+**Run:**
 ```bash
-npm install
+node mcp-express-streamable-http.mjs
 ```
 
-3. Configure environment variables (optional):
+### 2. SSE Server with Instrumentation
+**File:** `mcp-express-sse.mjs`  
+**Port:** 3006
+
+A simpler implementation using Server-Sent Events (SSE) transport with Sentry instrumentation.
+
+**Features:**
+- Full Sentry instrumentation via `wrapMcpServerWithSentry`
+- SSE-based transport exclusively
+- Session management (maintains state between requests)
+- Basic `add` tool for mathematical operations
+- Separate endpoints for SSE stream (`/mcp`) and messages (`/messages`)
+
+**Run:**
 ```bash
-export NODE_ENV=development  # or production
+node mcp-express-sse.mjs
 ```
 
-## Usage
+### 3. Streamable HTTP Server without Wrapper Instrumentation
+**File:** `mcp-express-no-instrumentation.js`  
+**Port:** 3005
 
-### Starting the Server
-1. setup your sentry DSN
-2. run `node mcp-express.js`
+A minimal implementation that imports Sentry but doesn't use the MCP-specific wrapper.
 
-The server will start on port 3005 by default.
+**Features:**
+- Imports Sentry instrumentation but doesn't wrap the MCP server
+- Uses older `registerTool` API
+- Stateless design
+- Basic `add` tool that includes a weather API call (for testing child spans)
+- Demonstrates baseline MCP functionality
 
-## API Endpoints
+**Run:**
+```bash
+node mcp-express-no-instrumentation.js
+```
 
-### MCP Endpoint
+## API Usage
+
+### Basic Tool Call Example
 
 **POST** `/mcp`
 
-Main MCP protocol endpoint for tool interactions.
-
-Example request:
 ```json
 {
   "jsonrpc": "2.0",
@@ -66,40 +103,37 @@ Example request:
 }
 ```
 
-### Test Endpoints
+### SSE Connection (Server 2 only)
 
-**GET** `/sentry-error`
+**GET** `/mcp` - Establishes SSE stream  
+**POST** `/messages?sessionId={sessionId}` - Send messages to established session
 
-Triggers a test error for Sentry monitoring verification.
+### Test Sentry Integration
 
-## Available Tools
+All servers include a test endpoint:
 
-### Add Tool
+**GET** `/sentry-error` - Triggers a test error for Sentry verification
 
-- **Name**: `add`
-- **Description**: Returns the sum of two numbers
-- **Parameters**:
-  - `a` (number): First number
-  - `b` (number): Second number
-- **Returns**: Sum of a + b
+## Key Differences
 
-## Configuration
+| Feature | Streamable HTTP (Full) | SSE Server | No Wrapper |
+|---------|----------------------|------------|------------|
+| Sentry Wrapper | ✅ `wrapMcpServerWithSentry` | ✅ `wrapMcpServerWithSentry` | ❌ Basic import only |
+| Transport | StreamableHTTP | SSE | StreamableHTTP |
+| Tools | 6 advanced tools | 1 basic tool | 1 basic tool |
+| Resources | ✅ | ❌ | ❌ |
+| Prompts | ✅ | ❌ | ❌ |
+| State | Stateless | Stateful | Stateless |
+| API Style | Modern `tool()` | Modern `tool()` | Legacy `registerTool()` |
 
-### Sentry Configuration
+## Development Notes
 
-The server is configured with:
-- **DSN**: Pre-configured for error tracking
-- **Tracing**: 100% sample rate for development
-- **Spotlight**: Enabled for local development
-- **Performance Monitoring**: Full HTTP request/response tracking
+- The `instrument.mjs` file must be imported using Node's `--import` flag for proper Sentry initialization
+- All servers demonstrate different aspects of MCP server implementation
+- The full instrumentation server (streamable-http) serves as the most comprehensive example
+- SSE server shows how to maintain session state across requests
+- The no-wrapper server demonstrates baseline functionality without MCP-specific Sentry features
 
-### MCP Configuration
+## License
 
-- **Server Name**: "add-server"
-- **Version**: "1.0.0"
-- **Capabilities**: Tools support
-- **Transport**: Streamable HTTP Server Transport
-
-## Development
-
-### Project Structure 
+[Add your license here] 
