@@ -1,7 +1,7 @@
 // MCP Server with Sentry instrumentation
 // Run with: node --import ./instrument.mjs mcp-express.mjs
-
-import "./instrument.mjs";
+//           and comment out the import of the instrument.mjs file
+import "./instrument.mjs"; 
 import * as Sentry from "@sentry/core";
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
